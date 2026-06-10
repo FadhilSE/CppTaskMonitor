@@ -1,0 +1,5 @@
+build/
+build-sqlite/
+*.db
+*.exe
+.vs/
