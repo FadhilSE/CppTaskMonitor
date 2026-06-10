@@ -1,11 +1,16 @@
 #include "TaskManager.h"
+#include "SystemMonitor.h"
 #include <iostream>
+
 using namespace std;
 
 int main() {
     // Create TaskManager object
-    // Version 3: SQLite database loads automatically inside the constructor
+    // SQLite database loads automatically inside the constructor
     TaskManager manager;
+
+    // Create SystemMonitor object
+    SystemMonitor monitor;
 
     int choice;
 
@@ -16,7 +21,8 @@ int main() {
         cout << "3. Mark Task Complete\n";
         cout << "4. Delete Task\n";
         cout << "5. Search Tasks\n";
-        cout << "6. Exit\n";
+        cout << "6. View System Info\n";
+        cout << "7. Exit\n";
         cout << "Choose an option: ";
         cin >> choice;
 
@@ -68,15 +74,16 @@ int main() {
             manager.searchTasks(keyword);
         }
         else if (choice == 6) {
-            // No saveToFile needed anymore
-            // SQLite saves tasks automatically when changes happen
+            monitor.displaySystemInfo();
+        }
+        else if (choice == 7) {
             cout << "Goodbye. Database saved automatically.\n";
         }
         else {
             cout << "Invalid option. Try again.\n";
         }
 
-    } while (choice != 6);
+    } while (choice != 7);
 
     return 0;
 }

@@ -10,6 +10,7 @@ add_executable(CppTaskMonitor
     src/main.cpp
     src/Task.cpp
     src/TaskManager.cpp
+    src/SystemMonitor.cpp
 )
 
 target_link_libraries(CppTaskMonitor PRIVATE unofficial::sqlite3::sqlite3)
