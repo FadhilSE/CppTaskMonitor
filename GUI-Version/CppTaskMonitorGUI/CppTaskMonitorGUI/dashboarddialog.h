@@ -22,12 +22,16 @@ public:
                           int highPriorityTasks,
                           int mediumPriorityTasks,
                           int lowPriorityTasks,
+                          int schoolTasks,
+                          int workTasks,
+                          int personalTasks,
                           double completionRate);
 
 private:
     Ui::DashboardDialog *ui;
     QChartView *chartView;
     QChartView *priorityChartView;
+    QChartView *categoryChartView;
 };
 
 #endif

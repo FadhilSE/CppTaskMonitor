@@ -102,9 +102,9 @@
     <property name="geometry">
      <rect>
       <x>130</x>
-      <y>140</y>
+      <y>134</y>
       <width>381</width>
-      <height>22</height>
+      <height>30</height>
      </rect>
     </property>
    </widget>
@@ -142,6 +142,45 @@
     </property>
     <property name="text">
      <string>Dashboard</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="exportCsvButton">
+    <property name="geometry">
+     <rect>
+      <x>630</x>
+      <y>150</y>
+      <width>101</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Export CSV</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="darkModeButton">
+    <property name="geometry">
+     <rect>
+      <x>630</x>
+      <y>190</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Dark Mode</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="importCsvButton">
+    <property name="geometry">
+     <rect>
+      <x>630</x>
+      <y>110</y>
+      <width>101</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Import CSV</string>
     </property>
    </widget>
   </widget>

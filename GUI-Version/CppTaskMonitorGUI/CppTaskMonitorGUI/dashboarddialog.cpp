@@ -19,14 +19,18 @@ DashboardDialog::DashboardDialog(QWidget *parent)
     , ui(new Ui::DashboardDialog)
 {
     ui->setupUi(this);
-    setFixedSize(650, 520);
+    setFixedSize(720, 560);
     chartView = new QChartView(this);
-    chartView->setGeometry(380, 40, 220, 180);
+    chartView->setGeometry(380, 40, 250, 170);
     chartView->setRenderHint(QPainter::Antialiasing);
 
     priorityChartView = new QChartView(this);
-    priorityChartView->setGeometry(320, 250, 300, 200);
+    priorityChartView->setGeometry(380, 260, 300, 220);
     priorityChartView->setRenderHint(QPainter::Antialiasing);
+
+    categoryChartView = new QChartView(this);
+    categoryChartView->setGeometry(30, 260, 280, 220);
+    categoryChartView->setRenderHint(QPainter::Antialiasing);
 
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 
@@ -57,6 +61,9 @@ void DashboardDialog::setDashboardData(int totalTasks,
                                        int highPriorityTasks,
                                        int mediumPriorityTasks,
                                        int lowPriorityTasks,
+                                       int schoolTasks,
+                                       int workTasks,
+                                       int personalTasks,
                                        double completionRate)
 {
     ui->totalTasksLabel->setText("Total Tasks: " + QString::number(totalTasks));
@@ -105,4 +112,17 @@ void DashboardDialog::setDashboardData(int totalTasks,
 
     barChart->legend()->setVisible(false);
     priorityChartView->setChart(barChart);
+
+    QPieSeries *categorySeries = new QPieSeries();
+
+    categorySeries->append("School", schoolTasks);
+    categorySeries->append("Work", workTasks);
+    categorySeries->append("Personal", personalTasks);
+
+    QChart *categoryChart = new QChart();
+    categoryChart->addSeries(categorySeries);
+    categoryChart->setTitle("Categories");
+    categoryChart->legend()->setVisible(true);
+
+    categoryChartView->setChart(categoryChart);
 }

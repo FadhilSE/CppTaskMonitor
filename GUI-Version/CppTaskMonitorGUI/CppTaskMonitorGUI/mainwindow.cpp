@@ -12,6 +12,10 @@
 #include "addtaskdialog.h"
 #include <QAbstractItemView>
 #include "dashboarddialog.h"
+#include <QFileDialog>
+#include <QFile>
+#include <QTextStream>
+#include <QSettings>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -19,21 +23,34 @@ MainWindow::MainWindow(QWidget *parent)
     , db(nullptr)
 {
     ui->setupUi(this);
+    QSettings settings("FadhilSE", "SmartTaskManager");
+    darkModeEnabled = settings.value("darkModeEnabled", false).toBool();
+
+    if (darkModeEnabled) {
+        applyDarkTheme();
+        ui->darkModeButton->setText("Light Mode");
+    } else {
+        applyLightTheme();
+        ui->darkModeButton->setText("Dark Mode");
+    }
+    ui->taskTable->setSortingEnabled(true);
+    //darkModeEnabled = false;
     ui->taskTable->horizontalHeader()->setStretchLastSection(true);
     ui->taskTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     setWindowTitle("Smart Task Manager Pro");
+   // applyLightTheme();
+    //this->setStyleSheet(
+      //  "QMainWindow { background-color: #f4f6f8; }"
+        //"QLabel { font-size: 14px; font-weight: bold; }"
+       // "QLabel#titleLabel { font-size: 22px; font-weight: bold; color: #1e293b; }"
+        //"QPushButton { background-color: #2563eb; color: white; border-radius: 6px; "
+        //"padding: 4px 10px; font-weight: bold; font-size: 10pt; min-width: 90px; min-height: 24px; }"
+        //"QPushButton:hover { background-color: #1d4ed8; }"
+        //"QLineEdit { border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; }"
+        //"QTableWidget { background-color: white; border: 1px solid #cbd5e1; }"
+      //  );
 
-    this->setStyleSheet(
-        "QMainWindow { background-color: #f4f6f8; }"
-        "QLabel { font-size: 14px; font-weight: bold; }"
-        "QLabel#titleLabel { font-size: 22px; font-weight: bold; color: #1e293b; }"
-        "QPushButton { background-color: #2563eb; color: white; border-radius: 6px; "
-        "padding: 4px 10px; font-weight: bold; font-size: 10pt; min-width: 90px; min-height: 24px; }"
-        "QPushButton:hover { background-color: #1d4ed8; }"
-        "QLineEdit { border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; }"
-        "QTableWidget { background-color: white; border: 1px solid #cbd5e1; }"
-        );
 
     // Hidden ID column + visible task columns
     ui->taskTable->setColumnCount(6);
@@ -61,7 +78,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->searchLineEdit, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
     connect(ui->taskTable, &QTableWidget::cellDoubleClicked, this, &MainWindow::onEditTaskClicked);
     connect(ui->dashboardButton, &QPushButton::clicked, this, &MainWindow::onDashboardClicked);
-
+    connect(ui->exportCsvButton, &QPushButton::clicked, this, &MainWindow::onExportCsvClicked);
+    connect(ui->darkModeButton, &QPushButton::clicked, this, &MainWindow::onDarkModeClicked);
+    connect(ui->importCsvButton, &QPushButton::clicked, this, &MainWindow::onImportCsvClicked);
+    connect(ui->dashboardButton, &QPushButton::clicked, this, &MainWindow::onDashboardClicked);
     updateStats();
 }
 
@@ -478,10 +498,24 @@ void MainWindow::onDashboardClicked()
     int highPriority = 0;
     int mediumPriority = 0;
     int lowPriority = 0;
+    int schoolTasks = 0;
+    int workTasks = 0;
+    int personalTasks = 0;
 
     for (int row = 0; row < total; ++row) {
         QString priority = ui->taskTable->item(row, 2)->text();
         QString status = ui->taskTable->item(row, 5)->text();
+        QString category = ui->taskTable->item(row, 4)->text();
+
+        if (category == "School") {
+            schoolTasks++;
+        }
+        else if (category == "Work") {
+            workTasks++;
+        }
+        else if (category == "Personal") {
+            personalTasks++;
+        }
 
         if (priority == "High") {
             highPriority++;
@@ -515,8 +549,178 @@ void MainWindow::onDashboardClicked()
         highPriority,
         mediumPriority,
         lowPriority,
+        schoolTasks,
+        workTasks,
+        personalTasks,
         completionRate
         );
-
     dialog.exec();
+}
+
+void MainWindow::onExportCsvClicked()
+{
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        "Export Tasks to CSV",
+        "tasks_export.csv",
+        "CSV Files (*.csv)"
+        );
+
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    QFile file(fileName);
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Export Error", "Could not create CSV file.");
+        return;
+    }
+
+    QTextStream out(&file);
+
+    out << "ID,Title,Priority,Due Date,Category,Status\n";
+
+    for (int row = 0; row < ui->taskTable->rowCount(); ++row) {
+        if (ui->taskTable->isRowHidden(row)) {
+            continue;
+        }
+
+        for (int col = 0; col < ui->taskTable->columnCount(); ++col) {
+            QTableWidgetItem *item = ui->taskTable->item(row, col);
+
+            QString text = item ? item->text() : "";
+
+            text.replace("\"", "\"\"");
+
+            out << "\"" << text << "\"";
+
+            if (col < ui->taskTable->columnCount() - 1) {
+                out << ",";
+            }
+        }
+
+        out << "\n";
+    }
+
+    file.close();
+
+    QMessageBox::information(this, "Export Complete", "Tasks exported successfully.");
+}
+
+void MainWindow::applyLightTheme()
+{
+    this->setStyleSheet(
+        "QMainWindow { background-color: #f4f6f8; }"
+        "QLabel { font-size: 14px; font-weight: bold; color: #1e293b; }"
+        "QLabel#titleLabel { font-size: 22px; font-weight: bold; color: #1e293b; }"
+        "QPushButton { background-color: #2563eb; color: white; border-radius: 6px; "
+        "padding: 4px 10px; font-weight: bold; font-size: 10pt; min-width: 90px; min-height: 24px; }"
+        "QPushButton:hover { background-color: #1d4ed8; }"
+        "QLineEdit { border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; background-color: white; color: black; }"
+        "QTableWidget { background-color: white; color: black; border: 1px solid #cbd5e1; }"
+        "QHeaderView::section { background-color: #e2e8f0; color: #1e293b; font-weight: bold; padding: 5px; }"
+        );
+}
+
+void MainWindow::applyDarkTheme()
+{
+    this->setStyleSheet(
+        "QMainWindow { background-color: #0f172a; }"
+        "QLabel { font-size: 14px; font-weight: bold; color: #e5e7eb; }"
+        "QLabel#titleLabel { font-size: 22px; font-weight: bold; color: #f8fafc; }"
+        "QPushButton { background-color: #3b82f6; color: white; border-radius: 6px; "
+        "padding: 4px 10px; font-weight: bold; font-size: 10pt; min-width: 90px; min-height: 24px; }"
+        "QPushButton:hover { background-color: #60a5fa; }"
+        "QLineEdit { border: 1px solid #334155; border-radius: 6px; padding: 6px; background-color: #1e293b; color: #f8fafc; }"
+        "QTableWidget { background-color: #1e293b; color: #f8fafc; border: 1px solid #334155; gridline-color: #334155; }"
+        "QHeaderView::section { background-color: #334155; color: #f8fafc; font-weight: bold; padding: 5px; }"
+        );
+}
+
+void MainWindow::onDarkModeClicked()
+{
+    darkModeEnabled = !darkModeEnabled;
+
+    if (darkModeEnabled) {
+        applyDarkTheme();
+        ui->darkModeButton->setText("Light Mode");
+    } else {
+        applyLightTheme();
+        ui->darkModeButton->setText("Dark Mode");
+    }
+
+    QSettings settings("FadhilSE", "SmartTaskManager");
+    settings.setValue("darkModeEnabled", darkModeEnabled);
+}
+
+void MainWindow::onImportCsvClicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(
+        this,
+        "Import Tasks from CSV",
+        "",
+        "CSV Files (*.csv)"
+        );
+
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    QFile file(fileName);
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Import Error", "Could not open CSV file.");
+        return;
+    }
+
+    QTextStream in(&file);
+
+    // Skip header line
+    if (!in.atEnd()) {
+        in.readLine();
+    }
+
+    int importedCount = 0;
+
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+
+        if (line.trimmed().isEmpty()) {
+            continue;
+        }
+
+        QStringList columns = line.split(",");
+
+        if (columns.size() < 5) {
+            continue;
+        }
+
+        QString title = columns[0].remove("\"").trimmed();
+        QString priority = columns[1].remove("\"").trimmed();
+        QString dueDate = columns[2].remove("\"").trimmed();
+        QString category = columns[3].remove("\"").trimmed();
+        QString status = columns[4].remove("\"").trimmed();
+
+        int id = saveTaskToDatabase(title, priority, dueDate, category);
+
+        if (id != -1) {
+            addTaskToTable(id, title, priority, dueDate, category, status);
+
+            if (status == "Completed") {
+                completeTaskInDatabase(id);
+            }
+
+            importedCount++;
+        }
+    }
+
+    file.close();
+    updateStats();
+
+    QMessageBox::information(
+        this,
+        "Import Complete",
+        QString::number(importedCount) + " tasks imported successfully."
+        );
 }

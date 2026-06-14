@@ -26,6 +26,9 @@ private slots:
     void onSearchTextChanged(const QString &text);
     void onEditTaskClicked();
     void onDashboardClicked();
+    void onExportCsvClicked();
+    void onDarkModeClicked();
+    void onImportCsvClicked();
 
 private:
     Ui::MainWindow *ui;
@@ -33,6 +36,9 @@ private:
 
     void initializeDatabase();
     void loadTasksFromDatabase();
+    bool darkModeEnabled;
+    void applyLightTheme();
+    void applyDarkTheme();
 
     void addTaskToTable(int id,
                         const QString &title,
