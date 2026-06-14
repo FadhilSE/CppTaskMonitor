@@ -20,6 +20,11 @@ public:
     QString getDueDate() const;
     QString getCategory() const;
 
+    void setTaskData(const QString &title,
+                     const QString &priority,
+                     const QString &dueDate,
+                     const QString &category);
+
 private:
     Ui::AddTaskDialog *ui;
 };

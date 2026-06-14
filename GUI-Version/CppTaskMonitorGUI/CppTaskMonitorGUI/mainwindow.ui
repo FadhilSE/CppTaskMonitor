@@ -49,7 +49,7 @@
    <widget class="QPushButton" name="deleteTaskButton">
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>200</x>
       <y>70</y>
       <width>100</width>
       <height>25</height>
@@ -62,7 +62,7 @@
    <widget class="QPushButton" name="completeTaskButton">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>340</x>
       <y>70</y>
       <width>110</width>
       <height>25</height>
@@ -75,7 +75,7 @@
    <widget class="QPushButton" name="systemMonitorButton">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>480</x>
       <y>70</y>
       <width>120</width>
       <height>25</height>
@@ -129,6 +129,19 @@
     </property>
     <property name="text">
      <string>Total Tasks: 0 | Completed: 0 | Pending: 0</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="dashboardButton">
+    <property name="geometry">
+     <rect>
+      <x>630</x>
+      <y>70</y>
+      <width>101</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Dashboard</string>
     </property>
    </widget>
   </widget>

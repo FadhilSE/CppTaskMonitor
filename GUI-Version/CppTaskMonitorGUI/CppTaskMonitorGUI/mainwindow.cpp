@@ -10,6 +10,8 @@
 #include "ui_mainwindow.h"
 #include <QDate>
 #include "addtaskdialog.h"
+#include <QAbstractItemView>
+#include "dashboarddialog.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -17,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
     , db(nullptr)
 {
     ui->setupUi(this);
+    ui->taskTable->horizontalHeader()->setStretchLastSection(true);
+    ui->taskTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     setWindowTitle("Smart Task Manager Pro");
 
@@ -34,9 +38,15 @@ MainWindow::MainWindow(QWidget *parent)
     // Hidden ID column + visible task columns
     ui->taskTable->setColumnCount(6);
     ui->taskTable->setHorizontalHeaderLabels({"ID", "Title", "Priority", "Due Date", "Category", "Status"});
+    ui->taskTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->taskTable->horizontalHeader()->setStretchLastSection(true);
+    ui->taskTable->verticalHeader()->setVisible(false);
+    ui->taskTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->taskTable->setAlternatingRowColors(true);
+    ui->taskTable->setSortingEnabled(true);
+    ui->taskTable->setColumnWidth(0, 60);
     ui->taskTable->hideColumn(0);
     ui->taskTable->horizontalHeader()->setStretchLastSection(true);
-    ui->taskTable->setSortingEnabled(true);
     ui->taskTable->setAlternatingRowColors(true);
     ui->taskTable->horizontalHeader()->setStretchLastSection(true);
     ui->taskTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -49,6 +59,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->completeTaskButton, &QPushButton::clicked, this, &MainWindow::onCompleteTaskClicked);
     connect(ui->systemMonitorButton, &QPushButton::clicked, this, &MainWindow::onSystemMonitorClicked);
     connect(ui->searchLineEdit, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
+    connect(ui->taskTable, &QTableWidget::cellDoubleClicked, this, &MainWindow::onEditTaskClicked);
+    connect(ui->dashboardButton, &QPushButton::clicked, this, &MainWindow::onDashboardClicked);
 
     updateStats();
 }
@@ -216,14 +228,25 @@ void MainWindow::onDeleteTaskClicked()
         return;
     }
 
+    QString taskTitle = ui->taskTable->item(row, 1)->text();
+
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        "Confirm Delete",
+        "Are you sure you want to delete this task?\n\nTask: " + taskTitle,
+        QMessageBox::Yes | QMessageBox::No
+        );
+
+    if (reply == QMessageBox::No) {
+        return;
+    }
+
     int id = ui->taskTable->item(row, 0)->text().toInt();
 
     deleteTaskFromDatabase(id);
     ui->taskTable->removeRow(row);
     updateStats();
-    applyStatusColor(row);
 }
-
 void MainWindow::onCompleteTaskClicked()
 {
     int row = ui->taskTable->currentRow();
@@ -342,32 +365,158 @@ void MainWindow::applyStatusColor(int row)
     }
 }
 
+
+
 void MainWindow::applyDueDateColor(int row)
 {
-    QTableWidgetItem *dateItem =
-        ui->taskTable->item(row, 3);
+    QTableWidgetItem *dateItem = ui->taskTable->item(row, 3);
+    QTableWidgetItem *statusItem = ui->taskTable->item(row, 5);
 
-    if (!dateItem)
+    if (!dateItem || !statusItem) {
         return;
+    }
 
-    QDate dueDate =
-        QDate::fromString(dateItem->text(), "yyyy-MM-dd");
+    if (statusItem->text() == "Completed") {
+        dateItem->setBackground(QColor("#dcfce7"));
+        dateItem->setForeground(QColor("#166534"));
+        return;
+    }
 
+    QDate dueDate = QDate::fromString(dateItem->text(), "yyyy-MM-dd");
     QDate today = QDate::currentDate();
 
-    if (dueDate < today)
-    {
+    int daysRemaining = today.daysTo(dueDate);
+
+    if (daysRemaining < 0) {
         dateItem->setBackground(QColor("#fee2e2"));
         dateItem->setForeground(QColor("#991b1b"));
     }
-    else if (dueDate == today)
-    {
+    else if (daysRemaining <= 3) {
         dateItem->setBackground(QColor("#fef3c7"));
         dateItem->setForeground(QColor("#92400e"));
     }
-    else
-    {
+    else {
         dateItem->setBackground(QColor("#dcfce7"));
         dateItem->setForeground(QColor("#166534"));
     }
+}
+
+void MainWindow::updateTaskInDatabase(int id,
+                                      const QString &title,
+                                      const QString &priority,
+                                      const QString &dueDate,
+                                      const QString &category)
+{
+    const char* sql =
+        "UPDATE tasks SET title = ?, priority = ?, dueDate = ?, category = ? WHERE id = ?;";
+
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+
+    sqlite3_bind_text(stmt, 1, title.toUtf8().constData(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, priority.toUtf8().constData(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 3, dueDate.toUtf8().constData(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, category.toUtf8().constData(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 5, id);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+void MainWindow::onEditTaskClicked()
+{
+    int row = ui->taskTable->currentRow();
+
+    if (row < 0) {
+        QMessageBox::warning(this, "Edit Task", "Please select a task first.");
+        return;
+    }
+
+    int id = ui->taskTable->item(row, 0)->text().toInt();
+
+    QString title = ui->taskTable->item(row, 1)->text();
+    QString priority = ui->taskTable->item(row, 2)->text();
+    QString dueDate = ui->taskTable->item(row, 3)->text();
+    QString category = ui->taskTable->item(row, 4)->text();
+
+    AddTaskDialog dialog(this);
+    dialog.setWindowTitle("Edit Task");
+    dialog.setTaskData(title, priority, dueDate, category);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QString newTitle = dialog.getTitle();
+
+        if (newTitle.isEmpty()) {
+            QMessageBox::warning(this, "Edit Task", "Task title cannot be empty.");
+            return;
+        }
+
+        QString newPriority = dialog.getPriority();
+        QString newDueDate = dialog.getDueDate();
+        QString newCategory = dialog.getCategory();
+
+        updateTaskInDatabase(id, newTitle, newPriority, newDueDate, newCategory);
+
+        ui->taskTable->setItem(row, 1, new QTableWidgetItem(newTitle));
+        ui->taskTable->setItem(row, 2, new QTableWidgetItem(newPriority));
+        ui->taskTable->setItem(row, 3, new QTableWidgetItem(newDueDate));
+        ui->taskTable->setItem(row, 4, new QTableWidgetItem(newCategory));
+
+        applyPriorityColor(row);
+        applyDueDateColor(row);
+        applyStatusColor(row);
+        updateStats();
+    }
+}
+
+void MainWindow::onDashboardClicked()
+{
+    int total = ui->taskTable->rowCount();
+    int completed = 0;
+    int pending = 0;
+    int highPriority = 0;
+    int mediumPriority = 0;
+    int lowPriority = 0;
+
+    for (int row = 0; row < total; ++row) {
+        QString priority = ui->taskTable->item(row, 2)->text();
+        QString status = ui->taskTable->item(row, 5)->text();
+
+        if (priority == "High") {
+            highPriority++;
+        }
+        else if (priority == "Medium") {
+            mediumPriority++;
+        }
+        else if (priority == "Low") {
+            lowPriority++;
+        }
+
+        if (status == "Completed") {
+            completed++;
+        } else {
+            pending++;
+        }
+    }
+
+    double completionRate = 0.0;
+
+    if (total > 0) {
+        completionRate = (static_cast<double>(completed) / total) * 100.0;
+    }
+
+    DashboardDialog dialog(this);
+
+    dialog.setDashboardData(
+        total,
+        completed,
+        pending,
+        highPriority,
+        mediumPriority,
+        lowPriority,
+        completionRate
+        );
+
+    dialog.exec();
 }

@@ -1,5 +1,6 @@
 #include "addtaskdialog.h"
 #include "ui_addtaskdialog.h"
+#include <QDate>
 
 AddTaskDialog::AddTaskDialog(QWidget *parent)
     : QDialog(parent)
@@ -58,4 +59,15 @@ QString AddTaskDialog::getDueDate() const
 QString AddTaskDialog::getCategory() const
 {
     return ui->categoryComboBox->currentText();
+}
+
+void AddTaskDialog::setTaskData(const QString &title,
+                                const QString &priority,
+                                const QString &dueDate,
+                                const QString &category)
+{
+    ui->titleLineEdit->setText(title);
+    ui->priorityComboBox->setCurrentText(priority);
+    ui->dueDateEdit->setDate(QDate::fromString(dueDate, "yyyy-MM-dd"));
+    ui->categoryComboBox->setCurrentText(category);
 }

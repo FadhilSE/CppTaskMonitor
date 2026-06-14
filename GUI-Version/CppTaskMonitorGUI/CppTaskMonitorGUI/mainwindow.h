@@ -24,10 +24,8 @@ private slots:
     void onCompleteTaskClicked();
     void onSystemMonitorClicked();
     void onSearchTextChanged(const QString &text);
-    void updateStats();
-    void applyPriorityColor(int row);
-    void applyStatusColor(int row);
-    void applyDueDateColor(int row);
+    void onEditTaskClicked();
+    void onDashboardClicked();
 
 private:
     Ui::MainWindow *ui;
@@ -35,12 +33,32 @@ private:
 
     void initializeDatabase();
     void loadTasksFromDatabase();
-    void addTaskToTable(int id, const QString &title, const QString &priority,
-                        const QString &dueDate, const QString &category, const QString &status);
-    int saveTaskToDatabase(const QString &title, const QString &priority,
-                           const QString &dueDate, const QString &category);
+
+    void addTaskToTable(int id,
+                        const QString &title,
+                        const QString &priority,
+                        const QString &dueDate,
+                        const QString &category,
+                        const QString &status);
+
+    int saveTaskToDatabase(const QString &title,
+                           const QString &priority,
+                           const QString &dueDate,
+                           const QString &category);
+
     void deleteTaskFromDatabase(int id);
     void completeTaskInDatabase(int id);
+
+    void updateTaskInDatabase(int id,
+                              const QString &title,
+                              const QString &priority,
+                              const QString &dueDate,
+                              const QString &category);
+
+    void updateStats();
+    void applyPriorityColor(int row);
+    void applyStatusColor(int row);
+    void applyDueDateColor(int row);
 };
 
 #endif

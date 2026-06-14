@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(CppTaskMonitorGUI LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Charts)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 qt_standard_project_setup()
 
@@ -11,13 +11,19 @@ qt_add_executable(CppTaskMonitorGUI
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
-    addtaskdialog.h addtaskdialog.cpp addtaskdialog.ui
+    addtaskdialog.cpp
+    addtaskdialog.h
+    addtaskdialog.ui
+    dashboarddialog.cpp
+    dashboarddialog.h
+    dashboarddialog.ui
 )
 
 target_link_libraries(CppTaskMonitorGUI
     PRIVATE
         Qt::Core
         Qt::Widgets
+        Qt::Charts
         unofficial::sqlite3::sqlite3
 )
 
